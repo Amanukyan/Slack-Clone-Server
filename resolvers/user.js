@@ -1,9 +1,8 @@
 import bcrypt from 'bcrypt';
 import _ from 'lodash';
 
-const formatErrors = (e, models) => {
-  if (e instanceof models.sequelize.ValidationError) {
-    //  _.pick({a: 1, b: 2}, 'a') => {a: 1}
+const formatErrors = (e) => {
+  if (e.errors && e.message) {
     return e.errors.map((x) => _.pick(x, ['path', 'message']));
   }
   return [{ path: 'name', message: 'something went wrong' }];
@@ -44,7 +43,7 @@ export default {
       } catch (err) {
         return {
           ok: false,
-          errors: formatErrors(err, models),
+          errors: formatErrors(err),
         };
       }
     },
