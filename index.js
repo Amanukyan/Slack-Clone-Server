@@ -15,7 +15,7 @@ models.sequelize.sync({}).then(() => {
   app.listen({ port: 4000 }, () => {
     // eslint-disable-next-line no-console
     console.log(
-      `🚀 Server ready at http://localhost:4000${server.graphqlPath}`
+      `🚀 Server ready at http://localhost:4000${server.graphqlPath}`,
     );
   });
 });
