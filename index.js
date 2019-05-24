@@ -1,5 +1,6 @@
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
+import { createServer } from 'http';
 import path from 'path';
 import { fileLoader, mergeTypes, mergeResolvers } from 'merge-graphql-schemas';
 import cors from 'cors';
@@ -7,6 +8,8 @@ import jwt from 'jsonwebtoken';
 
 import models from './models';
 import { refreshTokens } from './auth';
+
+const PORT = process.env.PORT || 4000;
 
 const SECRET = 'asiodfhoi1hoi23jnl1kejd';
 const SECRET2 = 'asiodfhoi1hoi23jnl1kejasdjlkfasdd';
@@ -17,7 +20,7 @@ const resolvers = mergeResolvers(
   fileLoader(path.join(__dirname, './resolvers')),
 );
 
-const server = new ApolloServer({
+const apolloServer = new ApolloServer({
   typeDefs,
   resolvers,
   context: ({ req }) => ({
@@ -60,13 +63,20 @@ const addUser = async (req, res, next) => {
 
 app.use(addUser);
 
-server.applyMiddleware({ app });
+apolloServer.applyMiddleware({ app });
+
+const httpServer = createServer(app);
+apolloServer.installSubscriptionHandlers(httpServer);
 
 models.sequelize.sync({}).then(() => {
-  app.listen({ port: 4000 }, () => {
-    // eslint-disable-next-line no-console
+  httpServer.listen({ port: PORT }, () => {
     console.log(
-      `🚀 Server ready at http://localhost:4000${server.graphqlPath}`,
+      `🚀 Server ready at http://localhost:${PORT}${apolloServer.graphqlPath}`,
+    );
+    console.log(
+      `🚀 Subscriptions ready at ws://localhost:${PORT}${
+        apolloServer.subscriptionsPath
+      }`,
     );
   });
 });
