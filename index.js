@@ -1,6 +1,9 @@
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
 import { createServer } from 'http';
+import { execute, subscribe } from 'graphql';
+import { SubscriptionServer } from 'subscriptions-transport-ws';
+import { makeExecutableSchema } from 'graphql-tools';
 import path from 'path';
 import { fileLoader, mergeTypes, mergeResolvers } from 'merge-graphql-schemas';
 import cors from 'cors';
@@ -19,6 +22,11 @@ const typeDefs = mergeTypes(fileLoader(path.join(__dirname, './schema')));
 const resolvers = mergeResolvers(
   fileLoader(path.join(__dirname, './resolvers')),
 );
+
+const schema = makeExecutableSchema({
+  typeDefs,
+  resolvers,
+});
 
 const apolloServer = new ApolloServer({
   typeDefs,
@@ -66,10 +74,22 @@ app.use(addUser);
 apolloServer.applyMiddleware({ app });
 
 const httpServer = createServer(app);
-apolloServer.installSubscriptionHandlers(httpServer);
 
 models.sequelize.sync({}).then(() => {
   httpServer.listen({ port: PORT }, () => {
+    // eslint-disable-next-line no-new
+    new SubscriptionServer(
+      {
+        execute,
+        subscribe,
+        schema,
+      },
+      {
+        server: httpServer,
+        path: '/subscriptions',
+      },
+    );
+
     console.log(
       `🚀 Server ready at http://localhost:${PORT}${apolloServer.graphqlPath}`,
     );
